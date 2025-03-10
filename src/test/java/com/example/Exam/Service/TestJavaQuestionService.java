@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestJavaQuestionService {
     JavaQuestionService javaQuestionService = new JavaQuestionService();
 
-
     @BeforeEach
     void init() {
         javaQuestionService.add("Что такое ООП?", "Объектно-ориентированное программирование");
