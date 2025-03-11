@@ -1,55 +1,85 @@
 package com.example.Exam.Service;
 
 import com.example.Exam.model.Question;
-import com.example.Exam.service.ExaminerService;
-import com.example.Exam.service.JavaQuestionService;
 import com.example.Exam.service.QuestionService;
 import com.example.Exam.service.impl.ExaminerServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-class TestExaminerServiceImpl {
+@ExtendWith(MockitoExtension.class)
+class ExaminerServiceImplTest {
 
+    @Mock
     private QuestionService questionService;
-    private ExaminerService examinerService;
+
+    @InjectMocks
+    private ExaminerServiceImpl examinerService;
+
+    private List<Question> mockQuestions;
 
     @BeforeEach
     void setUp() {
-        questionService = new JavaQuestionService();
-        examinerService = new ExaminerServiceImpl(questionService);
+        // Подготовка тестовых данных
+        mockQuestions = List.of(
+                new Question("Что такое Java?", "Java — это язык программирования."),
+                new Question("Что такое JVM?", "JVM — это виртуальная машина Java."),
+                new Question("Что такое Spring?", "Spring — это фреймворк для Java.")
+        );
     }
 
     @Test
-    void getRandomQuestion() {
-        questionService.add("Вопрос 1", "Ответ 1");
-        questionService.add("Вопрос 2", "Ответ 2");
-        Question randomQuestion = examinerService.getRandomQuestion();
-        assertNotNull(randomQuestion);
+    void getAllQuestions_ShouldReturnCorrectAmountOfQuestions() {
+        // Arrange
+        when(questionService.getAllQuestions()).thenReturn(mockQuestions);
+        int amount = 2;
+
+        // Act
+        Collection<Question> result = examinerService.getAllQuestions(amount);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(amount, result.size()); // Проверяем, что возвращено ровно amount вопросов
+        assertTrue(mockQuestions.containsAll(result)); // Проверяем, что все вопросы из mockQuestions
+        verify(questionService, times(1)).getAllQuestions(); // Проверяем, что метод вызван 1 раз
     }
 
     @Test
-    void addQuestion() {
-        Question question = examinerService.addQuestion("Вопрос", "Ответ");
-        assertNotNull(question);
-        assertEquals("Вопрос", question.getQuestion());
-        assertEquals("Ответ", question.getAnswer());
+    void getAllQuestions_ShouldThrowException_WhenNotEnoughQuestions() {
+        // Arrange
+        when(questionService.getAllQuestions()).thenReturn(mockQuestions);
+        int amount = 4; // Запрашиваем больше, чем есть
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            examinerService.getAllQuestions(amount);
+        });
+        assertEquals("Недостаточно вопросов для выбора", exception.getMessage());
+        verify(questionService, times(1)).getAllQuestions(); // Проверяем, что метод вызван 1 раз
     }
 
     @Test
-    void removeQuestion() {
-        examinerService.addQuestion("Вопрос для удаления", "Ответ");
-        int size = questionService.getAllQuestions().size();
-        examinerService.removeQuestion("Вопрос для удаления");
-        assertEquals(size - 1, questionService.getAllQuestions().size());
-    }
+    void getAllQuestions_ShouldReturnAllQuestions_WhenAmountEqualsSize() {
+        // Arrange
+        when(questionService.getAllQuestions()).thenReturn(mockQuestions);
+        int amount = mockQuestions.size(); // Запрашиваем все вопросы
 
-    @Test
-    void findQuestion() {
-        examinerService.addQuestion("Вопрос", "Ответ");
-        Question foundQuestion = examinerService.findQuestion("Вопрос");
-        assertNotNull(foundQuestion);
-        assertEquals("Вопрос", foundQuestion.getQuestion());
+        // Act
+        Collection<Question> result = examinerService.getAllQuestions(amount);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(amount, result.size()); // Проверяем, что возвращено ровно amount вопросов
+        assertTrue(mockQuestions.containsAll(result)); // Проверяем, что все вопросы из mockQuestions
+        verify(questionService, times(1)).getAllQuestions();
     }
 }
